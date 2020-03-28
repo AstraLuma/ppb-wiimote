@@ -230,6 +230,7 @@ class WiimoteSystem(System):
             except RuntimeError:
                 # Error opening wiimote connection
                 # TODO: Do something
+                signal(ppb.events.Quit())
                 raise
 
             # Save wiimote and send out event

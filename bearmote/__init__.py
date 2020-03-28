@@ -144,8 +144,8 @@ class SetWiimoteLed:
     """
     Set the LEDs on the wiimote
     """
+    id: typing.Any
     leds: typing.Set[WiimoteLed]
-    id: typing.Any = None
 
 
 class Led1(WiimoteLed):
@@ -251,18 +251,21 @@ class WiimoteSystem(System):
         fut = self._exec.submit(cwiid.Wiimote)
         fut.add_done_callback(_on_complete)
 
-    def _wiimote_handler(self, mid, state, mesg, timestamp):
-        mtype, *payload = mesg
+    def _wiimote_handler(self, mid, state, mesgs, timestamp):
+        for mesg in mesgs:
+            mtype, *payload = mesg
+            if mtype == cwiid.MESG_STATUS:
+                # Battery & extension info
+                # TODO: Signal event
+                pass
+            elif mtype == cwiid.MESG_BTN:
+                new_buttons = _bitfield2set(payload[0], _button_map)
+                for btn in new_buttons - state.buttons:
+                    self.engine.signal(WiimoteButtonPressed(button=btn))
+                for btn in state.buttons - new_buttons:
+                    self.engine.signal(WiimoteButtonReleased(button=btn))
+                state.buttons = new_buttons
+            # TODO: Additional stuff
 
-        if mtype == cwiid.MESG_STATUS:
-            # Battery & extension info
-            # TODO: Signal event
-            pass
-        elif mtype == cwiid.MESG_BTN:
-            new_buttons = _bitfield2set(payload[0], _button_map)
-            for btn in new_buttons - state.buttons:
-                self.engine.signal(WiimoteButtonPressed(button=btn))
-            for btn in state.buttons - new_buttons:
-                self.engine.signal(WiimoteButtonReleased(button=btn))
-            state.buttons = new_buttons
-        # TODO: Additional stuff
+    def on_set_wiimote_leds(self, event, signal):
+        self._motes[event.id].led = _set2bitfield(event.leds, _led_map)

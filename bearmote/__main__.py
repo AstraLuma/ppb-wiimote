@@ -19,6 +19,7 @@ class LoadingScene(loadingscene.BaseLoadingScene):
 
 
 class ConnectScene(bearmote.ConnectScene):
+    background = 0, 0, 0
     connect_icon = Emoji('signal')
 
     def __init__(self, **props):
@@ -32,7 +33,7 @@ class ConnectScene(bearmote.ConnectScene):
 
 class PlayerSprite(ppb.Sprite):
     image = Emoji('bear')
-    size = 2
+    size = 1
     velocity = ppb.Vector(0, 0)
 
     BUTTONS = {
@@ -45,6 +46,8 @@ class PlayerSprite(ppb.Sprite):
     def on_wiimote_button_pressed(self, event, signal):
         if event.button == bearmote.B:
             self.size *= 2
+        elif event.button == bearmote.Home:
+            signal(ppb.events.StopScene())
         elif event.button in self.BUTTONS:
             self.velocity += self.BUTTONS[event.button]
 
@@ -61,6 +64,7 @@ class PlayerSprite(ppb.Sprite):
 class MainGame(ppb.BaseScene):
     def __init__(self, **props):
         super().__init__(**props)
+        self.main_camera.pixel_ratio = 128
         self.add(PlayerSprite())
 
     def on_scene_started(self, event, signal):
@@ -69,5 +73,6 @@ class MainGame(ppb.BaseScene):
 
 ppb.run(
     starting_scene=LoadingScene, scene_kwargs={'next_scene': MainGame},
+    resolution=(1900, 1080),
     systems=[bearmote.WiimoteSystem],
 )
